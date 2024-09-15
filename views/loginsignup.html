@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker - Sign Up</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Axios (for making POST requests) -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .form-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            color: green;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="form-container">
+            <h2 class="text-center">Sign Up</h2>
+
+            <!-- Signup Form -->
+            <form id="signupForm">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" placeholder="Enter username" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email address</label>
+                    <input type="email" class="form-control" id="email" placeholder="Enter email" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" placeholder="Enter password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+
+                <!-- Display error or success messages -->
+                <div id="errorMessage" class="error-message"></div>
+                <div id="successMessage" class="success-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+    <!-- JavaScript for handling form submission -->
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Clear previous messages
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+
+            // Collect form data
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Prepare the data to send in the POST request
+            const userData = {
+                username: username,
+                email: email,
+                password: password
+            };
+
+            // Send a POST request using Axios
+            axios.post('/home/signupdetails', userData)
+                .then(response => {
+                    // Success response
+                    if (response.status === 201) {
+                        document.getElementById('successMessage').innerText = 'User registered successfully!';
+                        document.getElementById('successMessage').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    // Error handling
+                    if (error.response && error.response.status === 400) {
+                        // Email already exists error
+                        document.getElementById('errorMessage').innerText = 'Email already exists.';
+                        document.getElementById('errorMessage').style.display = 'block';
+                    } else {
+                        // Generic error message
+                        document.getElementById('errorMessage').innerText = 'Error registering user. Please try again.';
+                        document.getElementById('errorMessage').style.display = 'block';
+                    }
+                });
+        });
+    </script>
+</body>
+
+</html>
