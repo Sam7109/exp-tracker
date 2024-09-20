@@ -1,8 +1,11 @@
 const express = require("express");
 const Details = require('./model/signupinfo');
+const Expense = require('./model/expenses')
 const sequelize = require('./utils/sequelize')
 
 const signupRoutes = require('./routes/approutes')
+const expenseroutes = require('./routes/expenseroutes')
+
 
 const bodyParser = require("body-parser");
 require("dotenv").config();
@@ -23,9 +26,17 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "views", "loginsignup.html")));
 
 app.use('/home',signupRoutes)
+app.use('/api', expenseroutes); // Make sure you're using a base route like '/api'
+
+
+
 
 app.get("/home", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "loginsignup.html"));
+});
+
+app.get("/expense", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "expensepage.html"));
 });
 
 sequelize.sync({ force: false }) // force: true will drop existing tables
