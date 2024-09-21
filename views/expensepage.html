@@ -4,12 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Create Expense</title>
+
     <link
       href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
       rel="stylesheet"
     />
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
+      /* Ensure the button is placed at the top-right corner */
+      .top-right {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
+
       .expense-item {
         display: flex;
         justify-content: space-between;
@@ -19,7 +27,11 @@
   </head>
   <body>
     <div class="container mt-5">
+      <!-- Place the Logout button at the top-right corner -->
+      <button id="logoutButton" class="btn btn-danger top-right">Logout</button>
+
       <h2>Create Expense</h2>
+
       <form id="expenseForm">
         <div class="form-group">
           <label for="amount">Amount</label>
@@ -71,63 +83,64 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-      document
-        .getElementById("expenseForm")
-        .addEventListener("submit", function (e) {
-          e.preventDefault();
+      document.getElementById("logoutButton").addEventListener("click", function () {
+        // Remove the JWT token from localStorage
+        localStorage.removeItem("jwtToken");
 
-          const amount = document.getElementById("amount").value;
-          const description = document.getElementById("description").value;
-          const expensetype = document.getElementById("expensetype").value;
-          
-          const token = localStorage.getItem("jwtToken");
+        // Redirect to the login page
+        window.location.href = "/home"; // Change this URL to your actual login page
+      });
 
-          // Create new expense
-          axios
-            .post(
-              "/api/submitexpense",
-              { amount, description, expensetype },
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            )
-            .then((response) => {
-              if (
-                response.data &&
-                response.data.message === "Expense added successfully"
-              ) {
-                addExpenseToList(response.data.data);
-                resetForm();
-              }
-            })
-            .catch((error) => console.error("Error creating expense:", error));
-        });
+      document.getElementById("expenseForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const amount = document.getElementById("amount").value;
+        const description = document.getElementById("description").value;
+        const expensetype = document.getElementById("expensetype").value;
+
+        const token = localStorage.getItem("jwtToken");
+
+        // Create new expense
+        axios
+          .post(
+            "/api/submitexpense",
+            { amount, description, expensetype },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          )
+          .then((response) => {
+            if (response.data && response.data.message === "Expense added successfully") {
+              addExpenseToList(response.data.data);
+              resetForm();
+            }
+          })
+          .catch((error) => console.error("Error creating expense:", error));
+      });
 
       function addExpenseToList(expense) {
         const listItem = document.createElement("li");
         listItem.className = "list-group-item expense-item";
         listItem.innerHTML = `
-                <div style="border: 1px solid #ccc; padding: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; max-width: 400px; width: 50%;">
-                    <div>
-                        <strong>${expense.description}</strong>
-                        <br>
-                        <small class="text-muted">${expense.expensetype}</small>
-                    </div>
-                    <span class="badge badge-primary badge-pill" style="background-color: #007bff; padding: 5px 10px; border-radius: 20px; font-size: 14px;">$${expense.amount}</span>
-                    <button class="btn btn-danger btn-sm ml-2 delete-btn" data-id="${expense.id}">Delete</button>
-                </div>
-            `;
+          <div style="border: 1px solid #ccc; padding: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; max-width: 400px; width: 50%;">
+            <div>
+              <strong>${expense.description}</strong>
+              <br>
+              <small class="text-muted">${expense.expensetype}</small>
+            </div>
+            <span class="badge badge-primary badge-pill" style="background-color: #007bff; padding: 5px 10px; border-radius: 20px; font-size: 14px;">$${expense.amount}</span>
+            <button class="btn btn-danger btn-sm ml-2 delete-btn" data-id="${expense.id}">Delete</button>
+          </div>
+        `;
 
         document.getElementById("expenseList").appendChild(listItem);
 
         // Add event listener for delete button
-        listItem
-          .querySelector(".delete-btn")
-          .addEventListener("click", function () {
-            deleteExpense(expense.id, listItem);
-          });
+        listItem.querySelector(".delete-btn").addEventListener("click", function () {
+          deleteExpense(expense.id, listItem);
+        });
       }
 
       function deleteExpense(id, listItem) {
