@@ -7,6 +7,9 @@ const signupRoutes = require('./routes/approutes')
 const expenseroutes = require('./routes/expenseroutes')
 
 
+const stripepayments = require('./routes/striperoutes')
+
+
 const bodyParser = require("body-parser");
 require("dotenv").config();
 
@@ -27,7 +30,7 @@ app.use(express.static(path.join(__dirname, "views", "loginsignup.html")));
 
 app.use('/home',signupRoutes)
 app.use('/api', expenseroutes); // Make sure you're using a base route like '/api'
-
+app.use('/stripe-payments',stripepayments)
 
 
 
@@ -39,7 +42,16 @@ app.get("/expense", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "expensepage.html"));
 });
 
-sequelize.sync({ alter: true }) // force: true will drop existing tables
+app.get('/payment-success', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'paymentsuccess.html'));
+});
+
+app.get('/payment-cancel', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'paymentfailed.html'));
+});
+
+
+sequelize.sync({ force: false}) // force: true will drop existing tables
   .then(() => {
     console.log('Database synchronized');
     // Start the server
@@ -54,6 +66,4 @@ sequelize.sync({ alter: true }) // force: true will drop existing tables
 
 
 
-// app.listen(port, () => {
-//   console.log(`Server running on ${port}`);
-// });
+

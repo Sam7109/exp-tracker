@@ -1,5 +1,5 @@
 const Sequelize = require("../utils/sequelize");
-const { DataTypes } = require("sequelize");
+const { DataTypes} = require("sequelize");
 const bcrypt = require('bcrypt');
 
 
@@ -24,6 +24,12 @@ const Details = Sequelize.define("userdetails", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  ispremium : {
+    type : DataTypes.BOOLEAN ,
+    allowNull: false,
+    defaultValue: false  // Sets the default value to false
+  
+  }
 });
 
 Details.beforeCreate(async (user) => {
@@ -31,4 +37,4 @@ Details.beforeCreate(async (user) => {
     user.password = await bcrypt.hash(user.password, salt);
   });
 
-module.exports = Details;
+module.exports = Details; 
