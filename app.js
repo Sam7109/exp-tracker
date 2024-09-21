@@ -39,7 +39,7 @@ app.get("/expense", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "expensepage.html"));
 });
 
-sequelize.sync({ force: false }) // force: true will drop existing tables
+sequelize.sync({ alter: true }) // force: true will drop existing tables
   .then(() => {
     console.log('Database synchronized');
     // Start the server
@@ -50,6 +50,9 @@ sequelize.sync({ force: false }) // force: true will drop existing tables
   .catch(err => {
     console.error('Error syncing the database:', err);
   });
+
+
+
 
 // app.listen(port, () => {
 //   console.log(`Server running on ${port}`);

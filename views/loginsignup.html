@@ -229,28 +229,27 @@
           const loginData = { email, password };
 
           // Send POST request using Axios
-          axios
-            .post("/home/isvalid", loginData)
-            .then((response) => {
-              if (response.status === 200) {
-                document.getElementById("loginSuccessMessage").innerText =
-                  "Login successful!";
-                document.getElementById("loginSuccessMessage").style.display =
-                  "block";
-              }
-              setTimeout(() => {
-            window.location.href = "/expense"; // Change this to your actual expense page URL
-          }, 1000); // Delay of 1 second before redirecting
-            })
-      })
-          //  })
-            .catch((error) => {
-              document.getElementById("loginErrorMessage").innerText =
-                "Invalid email or password.";
-              document.getElementById("loginErrorMessage").style.display =
+          axios.post("/home/isvalid", loginData).then((response) => {
+            if (response.status === 200) {
+              const token = response.data.token;
+              localStorage.setItem("jwtToken", token);
+              document.getElementById("loginSuccessMessage").innerText =
+                "Login successful!";
+              document.getElementById("loginSuccessMessage").style.display =
                 "block";
-            });
-       // });
+            }
+            setTimeout(() => {
+              window.location.href = "/expense"; // Change this to your actual expense page URL
+            }, 1000); // Delay of 1 second before redirecting
+          });
+        })
+        //  })
+        .catch((error) => {
+          document.getElementById("loginErrorMessage").innerText =
+            "Invalid email or password.";
+          document.getElementById("loginErrorMessage").style.display = "block";
+        });
+      // });
     </script>
   </body>
 </html>

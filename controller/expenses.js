@@ -3,7 +3,8 @@ const Expense = require("../model/expenses");
 exports.submitExpense = async (req, res) => {
   try {
     const { amount, description, expensetype } = req.body;
-    console.log("Request body:", req.body);
+    const userId = req.user.id;
+    console.log(userId)
 
     // Simple validation
     if (!amount || !description || !expensetype) {
@@ -12,8 +13,13 @@ exports.submitExpense = async (req, res) => {
       });
     }
 
-    const payload = await Expense.create({ amount, description, expensetype });
-
+    const payload = await Expense.create({
+      amount,
+      description,
+      expensetype,
+      userId,
+    });
+        console.log(payload)
     return res.status(201).json({
       message: "Expense added successfully",
       data: payload,
@@ -29,10 +35,16 @@ exports.submitExpense = async (req, res) => {
 
 exports.getAllexpenses = async (req, res) => {
   try {
-    const data = await Expense.findAll();
-    return res.status(200).json({
-      data: data,
-    });
+    const userId = req.user.id; // Get the user's ID from the JWT token
+
+    // Fetch all expenses that belong to the authenticated user
+    const expenses = await Expense.findAll({ where: { userId } });
+
+    if (!expenses.length) {
+      return res.status(404).json({ message: "No expenses found" });
+    }
+
+    return res.status(200).json({ data: expenses });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
@@ -42,9 +54,20 @@ exports.getAllexpenses = async (req, res) => {
 exports.deleteExpense = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(req.params.data);
-    const searchItem = await Expense.destroy({ where: { id } });
-    console.log(searchItem);
+    const userId = req.user.id;
+
+    const expense = await Expense.findOne({ where: { id } });
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found" });
+    }
+
+    // Check if the expense belongs to the authenticated user
+    if (expense.userId !== userId) {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to delete this expense" });
+    }
+    await Expense.destroy({ where: { id } });
     return res.status(204).send();
   } catch (error) {
     console.error(error);

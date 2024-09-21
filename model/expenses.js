@@ -13,7 +13,11 @@ const Expense = Sequelize.define('dailyexpense',{
     expensetype : {
         type : DataTypes.STRING,
         allowNull : false
-    }
+    },
+    userId: {
+        type: DataTypes.INTEGER, // This links the expense to the user
+        allowNull: false, // Make it required
+      },
 })
 
 module.exports = Expense
