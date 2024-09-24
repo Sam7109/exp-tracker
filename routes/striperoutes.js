@@ -1,13 +1,11 @@
 const express = require('express');
-const app = express();
+const bodyParser = require('body-parser');
 const router = express.Router();
+const authenticateToken = require('../middleware/authmiddleware');
+const stripeControllers = require('../controller/stripeintegrations');
 
-app.use(express.json());
+// Apply raw middleware specifically for Stripe webhook route
 
-const authenticateToken = require("../middleware/authmiddleware"); 
-const stripecontrollers = require('../controller/stripeintegrations')
+router.post('/create-stripe-session', authenticateToken, stripeControllers.createCheckoutSession);
 
-router.post('/create-stripe-session',authenticateToken,stripecontrollers.createCheckoutSession) 
-router.post('/stripe-webhook',stripecontrollers.handleWebhook)
-
-module .exports = router
+module.exports = router;

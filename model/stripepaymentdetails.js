@@ -2,11 +2,11 @@ const Sequelize = require("../utils/sequelize");
 const { DataTypes } = require("sequelize");
 
 const Stripepayments  = Sequelize.define("stripedetails", {
-  userId: {
+  pId: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  orderId: {
+  amount: {
     type: DataTypes.STRING,
     allowNull: false,
   },

@@ -85,6 +85,7 @@
     })
     .then(function (response) {
         // Redirect to Stripe's checkout page
+        console.log(response.data)
         window.location.href = response.data.url;
     })
     .catch(function (error) {

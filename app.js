@@ -1,30 +1,27 @@
 const express = require("express");
+const app = express();
 const Details = require('./model/signupinfo');
 const Expense = require('./model/expenses')
 const sequelize = require('./utils/sequelize')
 
 const signupRoutes = require('./routes/approutes')
 const expenseroutes = require('./routes/expenseroutes')
+const port = process.env.port;
 
 
 const stripepayments = require('./routes/striperoutes')
-
-
-const bodyParser = require("body-parser");
+const webhookroutes = require('./routes/webhooksroute')
 require("dotenv").config();
 
 const path = require("path");
-const app = express();
+
+app.use('/webhooks',webhookroutes)
 app.use(express.json());
 
 
 const cors = require("cors");
 app.use(cors());
-const port = process.env.port;
 
-// Middleware to parse incoming requests with JSON payloads
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(__dirname, "views", "loginsignup.html")));
 
