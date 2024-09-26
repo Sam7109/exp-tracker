@@ -1,10 +1,11 @@
 const Expense = require("../model/expenses");
+const userInfo = require("../model/signupinfo");
 
 exports.submitExpense = async (req, res) => {
   try {
     const { amount, description, expensetype } = req.body;
     const userId = req.user.id;
-    console.log(userId)
+    console.log(userId);
 
     // Simple validation
     if (!amount || !description || !expensetype) {
@@ -19,7 +20,7 @@ exports.submitExpense = async (req, res) => {
       expensetype,
       userId,
     });
-        console.log(payload)
+    console.log(payload);
     return res.status(201).json({
       message: "Expense added successfully",
       data: payload,
@@ -39,12 +40,13 @@ exports.getAllexpenses = async (req, res) => {
 
     // Fetch all expenses that belong to the authenticated user
     const expenses = await Expense.findAll({ where: { userId } });
-
-    if (!expenses.length) {
-      return res.status(404).json({ message: "No expenses found" });
-    }
-
-    return res.status(200).json({ data: expenses });
+    const paidUser = await userInfo.findOne({
+      where: { id: userId },
+      attributes: ["ispremium"],
+    });
+    return res
+      .status(200)
+      .json({ data: expenses, ispremium: paidUser.ispremium });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });

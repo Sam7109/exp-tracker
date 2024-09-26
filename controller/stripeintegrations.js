@@ -197,3 +197,4 @@ exports.createCheckoutSession = async (req, res) => {
     res.status(500).json({ error: err.message }); // Error handling
   }
 };
+//`${req.headers.origin}/payment-success`,
