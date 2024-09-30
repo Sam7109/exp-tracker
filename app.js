@@ -2,7 +2,9 @@ const express = require("express");
 const app = express();
 const Details = require('./model/signupinfo');
 const Expense = require('./model/expenses')
+
 const sequelize = require('./utils/sequelize')
+const signupModel = require('./model/signupinfo')
 
 const signupRoutes = require('./routes/approutes')
 const expenseroutes = require('./routes/expenseroutes')
@@ -47,8 +49,10 @@ app.get('/payment-cancel', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'paymentfailed.html'));
 });
 
+signupModel.hasMany(Expense, { foreignKey: 'userId' });
+Expense.belongsTo(signupModel, { foreignKey: 'userId' });
 
-sequelize.sync({ force: false}) // force: true will drop existing tables
+sequelize.sync() // force: true will drop existing tables //{ alter:true} will match with model definitions 
   .then(() => {
     console.log('Database synchronized');
     // Start the server

@@ -20,6 +20,39 @@
         justify-content: space-between;
         align-items: center;
       }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+      }
+      .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 50%;
+      }
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        cursor: pointer;
+      }
+      .close:hover,
+      .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .leaderboard-item {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+      }
     </style>
   </head>
   <body>
@@ -57,11 +90,18 @@
           </select>
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
-        <!-- New Premium button -->
-        <button id="premiumButton" class="btn btn-success ml-2">
+        <button id="premiumButton" class="btn btn-success ml-2 my-2">
           Go Premium
         </button>
+        <button
+          id="leaderboardButton"
+          class="btn btn-info ml-2 my-2"
+          style="display: none"
+        >
+          Leader Board
+        </button>
       </form>
+
       <h3 class="mt-5">Expenses List</h3>
       <ul
         id="expenseList"
@@ -75,6 +115,16 @@
         "
       ></ul>
     </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboardModal" class="modal">
+      <div class="modal-content">
+        <span id="closeModal" class="close">&times;</span>
+        <h3>Leaderboard</h3>
+        <ul id="leaderboardList" class="list-group"></ul>
+      </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -92,7 +142,6 @@
           e.preventDefault();
           const amount = document.getElementById("amount").value;
           const description = document.getElementById("description").value;
-
           const expensetype = document.getElementById("expensetype").value;
           const token = localStorage.getItem("jwtToken");
 
@@ -123,15 +172,9 @@
             .post(
               "/stripe-payments/create-stripe-session",
               {},
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`, // Properly format the header with your token
-                },
-              }
+              { headers: { Authorization: `Bearer ${token}` } }
             )
             .then(function (response) {
-              // Redirect to Stripe's checkout page
-              console.log(response.data);
               window.location.href = response.data.url;
             })
             .catch(function (error) {
@@ -140,35 +183,54 @@
             });
         });
 
-      function addExpenseToList(expense) {
-        const listItem = document.createElement("li");
-        listItem.className = "list-group-item expense-item";
-        listItem.innerHTML = `<div style="border: 1px solid #ccc; padding: 5px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; max-width: 400px; width: 50%;"><div><strong>${expense.description}</strong><br><small class="text-muted">${expense.expensetype}</small></div><span class="badge badge-primary badge-pill" style="background-color: #007bff; padding: 5px 10px; border-radius: 20px; font-size: 14px;">$${expense.amount}</span><button class="btn btn-danger btn-sm ml-2 delete-btn" data-id="${expense.id}">Delete</button></div>`;
-        document.getElementById("expenseList").appendChild(listItem);
-        listItem
-          .querySelector(".delete-btn")
-          .addEventListener("click", function () {
-            deleteExpense(expense.id, listItem);
-          });
-      }
+      // Leaderboard button click event
+      document
+        .getElementById("leaderboardButton")
+        .addEventListener("click", function () {
+          const token = localStorage.getItem("jwtToken");
 
-      function deleteExpense(id, listItem) {
-        const token = localStorage.getItem("jwtToken");
-        console.log(token);
-        axios
-          .delete(`/api/remove-exp/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          .then((response) => {
-            console.log("Response:", response);
-            if (response.status === 204) {
-              listItem.remove();
-            } else {
-              console.error("Unexpected response:", response);
-            }
-          })
-          .catch((error) => console.error("Error deleting expense:", error));
-      }
+          axios
+            .get("/api/leaderboard", {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+            .then((response) => {
+              console.log("Response Data:", response.data);
+              const leaderboardData = response.data.data;
+              console.log("Leaderboard Data:", response.data.data); // Log the "data" array
+
+              const leaderboardList =
+                document.getElementById("leaderboardList");
+              leaderboardList.innerHTML = "";
+
+              leaderboardData.forEach((user, index) => {
+                const listItem = document.createElement("li");
+                listItem.className = "list-group-item leaderboard-item";
+                listItem.innerHTML = `username: ${user.username} &nbsp;&nbsp; | &nbsp;&nbsp; total expense - ${user.totalExpense}`;
+
+                leaderboardList.appendChild(listItem);
+              });
+
+              document.getElementById("leaderboardModal").style.display =
+                "block";
+            })
+            .catch((error) => {
+              console.error("Error fetching leaderboard data:", error);
+              alert("Failed to fetch leaderboard data.");
+            });
+        });
+
+      document
+        .getElementById("closeModal")
+        .addEventListener("click", function () {
+          document.getElementById("leaderboardModal").style.display = "none";
+        });
+
+      window.addEventListener("click", function (event) {
+        const modal = document.getElementById("leaderboardModal");
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      });
 
       document.addEventListener("DOMContentLoaded", function () {
         const token = localStorage.getItem("jwtToken");
@@ -182,6 +244,8 @@
 
             if (isPremium) {
               document.getElementById("premiumButton").style.display = "none";
+              document.getElementById("leaderboardButton").style.display =
+                "block";
             }
 
             expenses.forEach((expense) => addExpenseToList(expense));
@@ -190,6 +254,34 @@
             console.error("Error fetching user expenses:", error);
           });
       });
+
+      function addExpenseToList(expense) {
+        const listItem = document.createElement("li");
+        listItem.className = "list-group-item expense-item";
+        listItem.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center;"><div><strong>${expense.description}</strong><br><small class="text-muted">${expense.expensetype}</small></div><span class="badge badge-primary badge-pill">$${expense.amount}</span><button class="btn btn-danger btn-sm ml-2 delete-btn" data-id="${expense.id}">Delete</button></div>`;
+        document.getElementById("expenseList").appendChild(listItem);
+        listItem
+          .querySelector(".delete-btn")
+          .addEventListener("click", function () {
+            deleteExpense(expense.id, listItem);
+          });
+      }
+
+      function deleteExpense(id, listItem) {
+        const token = localStorage.getItem("jwtToken");
+        axios
+          .delete(`/api/remove-exp/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((response) => {
+            if (response.status === 204) {
+              listItem.remove();
+            } else {
+              console.error("Unexpected response:", response);
+            }
+          })
+          .catch((error) => console.error("Error deleting expense:", error));
+      }
 
       function resetForm() {
         document.getElementById("expenseForm").reset();

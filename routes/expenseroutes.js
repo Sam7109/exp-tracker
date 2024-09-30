@@ -11,5 +11,6 @@ router.delete(
   expensecontroller.deleteExpense
 );
 router.get("/user-expenses",authenticateToken,expensecontroller.getAllexpenses);
+router.get('/leaderboard',authenticateToken,expensecontroller.getLeaderboardDetails)
 
 module.exports = router;

@@ -25,10 +25,13 @@ const Details = Sequelize.define("userdetails", {
     allowNull: false,
   },
   ispremium : {
-    type : DataTypes.BOOLEAN ,
-    allowNull: false,
-    defaultValue: false  // Sets the default value to false
-  
+    type: DataTypes.BOOLEAN,
+    defaultValue: false, // Set default to false
+    allowNull: false, // Disallow null values
+  },
+  userId : {
+    type : DataTypes.STRING,
+    allowNull : true
   }
 });
 

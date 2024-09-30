@@ -17,6 +17,7 @@ const Expense = Sequelize.define('dailyexpense',{
     userId: {
         type: DataTypes.INTEGER, // This links the expense to the user
         allowNull: false, // Make it required
+       
       },
 })
 

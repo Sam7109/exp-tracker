@@ -1,4 +1,5 @@
 const Details = require("../model/signupinfo");
+const userInfo = require('../model/signupinfo')
 const jwt = require('jsonwebtoken');
 
 const bcrypt = require("bcrypt");
@@ -14,37 +15,48 @@ exports.postSignupInfo = async (req, res) => {
     }
 
     const savedPayload = await Details.create({ email, username, password });
+    console.log(savedPayload);
+    // const token = jwt.sign(
+    //   { userId: savedPayload.id, email: savedPayload.email },
+    //   process.env.JWT_SECRET, // Use your secret key from environment variables
+    //   { expiresIn: "1h" } // Set the expiration time for the token
+    // )
+    // console.log(token)
+
+    // await userInfo.create({
+    //   userId : savedPayload.id
+    // })
+
     return res
       .status(201)
-      .json({ message: "Signup successful", data: savedPayload });
+      .json({ message: "Signup successful", data: savedPayload});
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-//dotenv.config(); // Ensure environment variables are loaded
 
-exports.postSignupInfo = async (req, res) => {
-  try {
-    const { username, email, password } = req.body;
-    console.log("Received signup data:", { username, email, password });
+// exports.postSignupInfo = async (req, res) => {
+//   try {
+//     const { username, email, password } = req.body;
+//     console.log("Received signup data:", { username, email, password });
     
-    const existingEmail = await Details.findOne({ where: { email } });
-    if (existingEmail) {
-      console.log("Email already exists");
-      return res.status(400).json({ message: "Email already exists" });
-    }
+//     const existingEmail = await Details.findOne({ where: { email } });
+//     if (existingEmail) {
+//       console.log("Email already exists");
+//       return res.status(400).json({ message: "Email already exists" });
+//     }
 
-    const savedPayload = await Details.create({ email, username, password });
-    console.log("Signup successful:", savedPayload);
+//     const savedPayload = await Details.create({ email, username, password });
+//     console.log("Signup successful:", savedPayload);
 
-    return res.status(201).json({ message: "Signup successful", data: savedPayload });
-  } catch (error) {
-    console.error("Error during signup:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
+//     return res.status(201).json({ message: "Signup successful", data: savedPayload });
+//   } catch (error) {
+//     console.error("Error during signup:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 exports.isValidUser = async (req, res) => {
   try {
