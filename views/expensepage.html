@@ -31,12 +31,16 @@
         background-color: rgba(0, 0, 0, 0.4);
       }
       .modal-content {
-        background-color: #fefefe;
-        margin: 15% auto;
-        padding: 20px;
-        border: 1px solid #888;
-        width: 50%;
-      }
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 60%;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 10px;
+}
+
       .close {
         color: #aaa;
         float: right;
@@ -53,6 +57,41 @@
         padding: 10px;
         border-bottom: 1px solid #ddd;
       }
+      .expense-box {
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin: 10px 0;
+        padding: 15px;
+        background-color: #f9f9f9;
+      }
+      .expense-header {
+        background-color: #f2f2f2;
+        padding: 8px;
+        font-weight: bold;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 10px;
+      }
+      .expense-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-gap: 15px;
+  margin-top: 10px;
+}
+.expense-field {
+  text-align: center;
+  border: 1px solid #ddd;
+  padding: 8px;
+  border-radius: 5px;
+  background-color: #fff;
+}
+.expense-year,
+.expense-month {
+  margin: 20px 0 10px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+      
     </style>
   </head>
   <body>
@@ -100,8 +139,11 @@
         >
           Leader Board
         </button>
+        <button id="expenseHistoryButton" class="btn btn-secondary ml-2 my-2" style="display: none;">
+          Expense History
+        </button>
+        <button id="downloadbtn" class="btn btn-secondary ml-2 my-2" style="display: none;" >Download Expenses</button>
       </form>
-
       <h3 class="mt-5">Expenses List</h3>
       <ul
         id="expenseList"
@@ -114,7 +156,24 @@
           border-radius: 5px;
         "
       ></ul>
+      <h3 class="mt-5">Expense History</h3>
+      <div id="expenseHistoryContainer" style="display: none;"></div>
     </div>
+    </div>
+
+        <!-- Expense History Modal -->
+        <div id="expenseHistoryModal" class="modal">
+          <div class="modal-content">
+            <span class="close" id="closeHistoryModal">&times;</span>
+            <h3>Expense History</h3>
+            <div id="expenseHistoryContent">
+              <!-- Table will be dynamically generated here -->
+            </div>
+          </div>
+        </div>
+  
+    
+  
 
     <!-- Leaderboard Modal -->
     <div id="leaderboardModal" class="modal">
@@ -246,6 +305,8 @@
               document.getElementById("premiumButton").style.display = "none";
               document.getElementById("leaderboardButton").style.display =
                 "block";
+                document.getElementById("expenseHistoryButton").style.display = "block"
+                document.getElementById("downloadbtn").style.display = "block"
             }
 
             expenses.forEach((expense) => addExpenseToList(expense));
@@ -286,6 +347,146 @@
       function resetForm() {
         document.getElementById("expenseForm").reset();
       }
+      // logic for displaying the expenses on Monthly and yearly basis 
+      document.getElementById("expenseHistoryButton").addEventListener("click", fetchAndDisplayExpenseHistory);
+
+async function fetchAndDisplayExpenseHistory() {
+  const modal = document.getElementById("expenseHistoryModal");
+  try {
+    const token = localStorage.getItem("jwtToken");
+    const response = await axios.get('/api/user-expenses', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const result = response.data;
+    if (result.data && Array.isArray(result.data)) {
+      const groupedExpenses = groupExpensesByYearAndMonth(result.data);
+      displayExpenseHistory(groupedExpenses);
+      modal.style.display = "block"; // Show the modal
+    } else {
+      throw new Error("Invalid data format");
+    }
+  } catch (error) {
+    console.error("Error fetching expense history:", error);
+    alert("Failed to fetch expense history. Please try again.");
+  }
+}
+
+function groupExpensesByYearAndMonth(expenses) {
+  return expenses.reduce((acc, expense) => {
+    const date = new Date(expense.createdAt);
+    const year = date.getFullYear();
+    const month = date.toLocaleString("default", { month: "long" });
+
+    if (!acc[year]) acc[year] = {};
+    if (!acc[year][month]) acc[year][month] = [];
+
+    acc[year][month].push(expense);
+    return acc;
+  }, {});
+}
+
+function displayExpenseHistory(groupedExpenses) {
+  const container = document.getElementById("expenseHistoryContent");
+  container.innerHTML = ""; // Clear previous content
+
+  for (const year in groupedExpenses) {
+    const yearDiv = document.createElement("div");
+    yearDiv.className = "expense-year";
+    yearDiv.innerHTML = `<h2>Year: ${year}</h2>`; // Use <h2> for Year header for better visibility
+
+    for (const month in groupedExpenses[year]) {
+      const monthDiv = document.createElement("div");
+      monthDiv.className = "expense-month";
+      monthDiv.innerHTML = `<h3>Month: ${month}</h3>`; // Use <h3> for Month header for better structure
+
+      // Create a Bootstrap table for structured display
+      const table = document.createElement("table");
+      table.className = "table table-bordered table-striped"; // Add Bootstrap classes here
+      table.innerHTML = `
+        <thead class="table-dark">
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+
+      // Fill table body with expense records
+      const tbody = table.querySelector("tbody");
+      groupedExpenses[year][month].forEach((expense) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${new Date(expense.createdAt).toLocaleDateString()}</td>
+          <td>${expense.description}</td>
+          <td>$${expense.amount.toFixed(2)}</td>
+          <td>${expense.expensetype}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // Append the table to the month div
+      monthDiv.appendChild(table);
+      yearDiv.appendChild(monthDiv);
+    }
+
+    container.appendChild(yearDiv);
+  }
+}
+
+// Close the Expense History Modal
+document.getElementById("closeHistoryModal").addEventListener("click", function () {
+  document.getElementById("expenseHistoryModal").style.display = "none";
+});
+
+// Close modal when clicking outside of the modal content
+window.addEventListener("click", function (event) {
+  const modal = document.getElementById("expenseHistoryModal");
+  if (event.target === modal) {
+    modal.style.display = "none";
+  }
+});
+
+//downloading CSV file 
+document.getElementById("downloadbtn").addEventListener('click',function(){
+  const token = localStorage.getItem("jwtToken");
+
+          axios
+            .get("/api/user-expenses?format=csv", {
+              headers: { Authorization: `Bearer ${token}` },
+              responseType: "blob",
+            })
+            .then((response) => {
+              // Create a new Blob object using the response data received from the server
+      const blob = new Blob([response.data], { type: "text/csv" });
+
+// Create a link element to download the file
+const downloadUrl = window.URL.createObjectURL(blob);
+const link = document.createElement("a");
+link.href = downloadUrl;
+
+// Set the file name for the download
+link.setAttribute("download", `user_expenses.csv`);
+
+// Append the link to the body (required for Firefox)
+document.body.appendChild(link);
+
+// Programmatically click the link to trigger the download
+link.click();
+
+// Remove the link element from the DOM
+document.body.removeChild(link);
+})
+.catch((error) => {
+console.error("Error downloading the file:", error);
+alert("Failed to download the expenses CSV file. Please try again.");
+});
+         
+            })
+
     </script>
   </body>
 </html>

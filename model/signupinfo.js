@@ -32,7 +32,15 @@ const Details = Sequelize.define("userdetails", {
   userId : {
     type : DataTypes.STRING,
     allowNull : true
-  }
+  },
+  resetPasswordToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  resetPasswordExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
 });
 
 Details.beforeCreate(async (user) => {

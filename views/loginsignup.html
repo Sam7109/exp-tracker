@@ -135,6 +135,15 @@
             <!-- Display error or success messages -->
             <div id="loginErrorMessage" class="error-message"></div>
             <div id="loginSuccessMessage" class="success-message"></div>
+
+            <!-- Forgot Password Button -->
+            <button
+              type="button"
+              id="forgotPasswordButton"
+              class="btn btn-link mt-2"
+            >
+              Forgot Password?
+            </button>
           </form>
 
           <!-- Toggle to signup form -->
@@ -152,103 +161,106 @@
     <!-- JavaScript for handling form toggling and submission -->
     <script>
       // Toggle between signup and login forms
-      document
-        .getElementById("showLoginForm")
-        .addEventListener("click", function () {
-          document.getElementById("signupForm").style.display = "none";
-          document.getElementById("loginForm").style.display = "block";
-        });
+      document.getElementById("showLoginForm").addEventListener("click", function () {
+        document.getElementById("signupForm").style.display = "none";
+        document.getElementById("loginForm").style.display = "block";
+      });
 
-      document
-        .getElementById("showSignupForm")
-        .addEventListener("click", function () {
-          document.getElementById("signupForm").style.display = "block";
-          document.getElementById("loginForm").style.display = "none";
-        });
+      document.getElementById("showSignupForm").addEventListener("click", function () {
+        document.getElementById("signupForm").style.display = "block";
+        document.getElementById("loginForm").style.display = "none";
+      });
 
       // Handle Signup Form Submission
-      document
-        .querySelector("#signupForm form")
-        .addEventListener("submit", function (event) {
-          event.preventDefault();
+      document.querySelector("#signupForm form").addEventListener("submit", function (event) {
+        event.preventDefault();
 
-          // Clear previous messages
-          document.getElementById("signupErrorMessage").style.display = "none";
-          document.getElementById("signupSuccessMessage").style.display =
-            "none";
+        // Clear previous messages
+        document.getElementById("signupErrorMessage").style.display = "none";
+        document.getElementById("signupSuccessMessage").style.display = "none";
 
-          // Collect form data
-          const username = document.getElementById("signup-username").value;
-          const email = document.getElementById("signup-email").value;
-          const password = document.getElementById("signup-password").value;
+        // Collect form data
+        const username = document.getElementById("signup-username").value;
+        const email = document.getElementById("signup-email").value;
+        const password = document.getElementById("signup-password").value;
 
-          // Prepare data for signup
-          const userData = { username, email, password };
+        // Prepare data for signup
+        const userData = { username, email, password };
 
-          // Send POST request using Axios
-          axios
-            .post("/home/signupdetails", userData)
-            .then((response) => {
-              if (response.status === 201) {
-                document.getElementById("signupSuccessMessage").innerText =
-                  "User registered successfully!";
-                document.getElementById("signupSuccessMessage").style.display =
-                  "block";
-              }
-            })
-            .catch((error) => {
-              if (error.response && error.response.status === 400) {
-                document.getElementById("signupErrorMessage").innerText =
-                  "Email already exists.";
-                document.getElementById("signupErrorMessage").style.display =
-                  "block";
-              } else {
-                document.getElementById("signupErrorMessage").innerText =
-                  "Error registering user. Please try again.";
-                document.getElementById("signupErrorMessage").style.display =
-                  "block";
-              }
-            });
-        });
+        // Send POST request using Axios
+        axios
+          .post("/home/signupdetails", userData)
+          .then((response) => {
+            if (response.status === 201) {
+              document.getElementById("signupSuccessMessage").innerText =
+                "User registered successfully!";
+              document.getElementById("signupSuccessMessage").style.display = "block";
+            }
+          })
+          .catch((error) => {
+            if (error.response && error.response.status === 400) {
+              document.getElementById("signupErrorMessage").innerText = "Email already exists.";
+              document.getElementById("signupErrorMessage").style.display = "block";
+            } else {
+              document.getElementById("signupErrorMessage").innerText = "Error registering user. Please try again.";
+              document.getElementById("signupErrorMessage").style.display = "block";
+            }
+          });
+      });
 
       // Handle Login Form Submission
-      document
-        .querySelector("#loginForm form")
-        .addEventListener("submit", function (event) {
-          event.preventDefault();
+      document.querySelector("#loginForm form").addEventListener("submit", function (event) {
+        event.preventDefault();
 
-          // Clear previous messages
-          document.getElementById("loginErrorMessage").style.display = "none";
-          document.getElementById("loginSuccessMessage").style.display = "none";
+        // Clear previous messages
+        document.getElementById("loginErrorMessage").style.display = "none";
+        document.getElementById("loginSuccessMessage").style.display = "none";
 
-          // Collect form data
-          const email = document.getElementById("login-email").value;
-          const password = document.getElementById("login-password").value;
+        // Collect form data
+        const email = document.getElementById("login-email").value;
+        const password = document.getElementById("login-password").value;
 
-          // Prepare data for login
-          const loginData = { email, password };
+        // Prepare data for login
+        const loginData = { email, password };
 
-          // Send POST request using Axios
-          axios.post("/home/isvalid", loginData).then((response) => {
+        // Send POST request using Axios
+        axios
+          .post("/home/isvalid", loginData)
+          .then((response) => {
             if (response.status === 200) {
               const token = response.data.token;
               localStorage.setItem("jwtToken", token);
-              document.getElementById("loginSuccessMessage").innerText =
-                "Login successful!";
-              document.getElementById("loginSuccessMessage").style.display =
-                "block";
+              document.getElementById("loginSuccessMessage").innerText = "Login successful!";
+              document.getElementById("loginSuccessMessage").style.display = "block";
             }
             setTimeout(() => {
               window.location.href = "/expense"; // Change this to your actual expense page URL
             }, 1000); // Delay of 1 second before redirecting
+          })
+          .catch((error) => {
+            document.getElementById("loginErrorMessage").innerText = "Invalid email or password.";
+            document.getElementById("loginErrorMessage").style.display = "block";
           });
-        })
+      });
 
-        .catch((error) => {
-          document.getElementById("loginErrorMessage").innerText =
-            "Invalid email or password.";
-          document.getElementById("loginErrorMessage").style.display = "block";
-        });
+      // Handle Forgot Password Button Click
+      document.getElementById("forgotPasswordButton").addEventListener("click", function () {
+        const email = document.getElementById("login-email").value;
+
+        if (!email) {
+          alert("Please enter your email address first.");
+          return;
+        }
+
+        axios
+          .post("/home/forgotPassword", { email })
+          .then((response) => {
+            alert("Password reset link has been sent to your email.");
+          })
+          .catch((error) => {
+            alert("Error sending reset link. Please try again.");
+          });
+      });
     </script>
   </body>
 </html>

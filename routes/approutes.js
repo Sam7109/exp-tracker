@@ -6,9 +6,12 @@ const signupController = require('../controller/signup')
 router.post('/signupdetails',signupController.postSignupInfo)
 router.post('/isvalid',signupController.isValidUser)
 
-// expenses routes 
+router.post('/forgotPassword',signupController.forgotPassword)
+router.get('/reset-Password/:id',signupController.resetPassword)
+
+
+router.post('/update-Password/:id', signupController.updatePassword);
 
 
 
-
-module.exports = router
+module.exports = router 

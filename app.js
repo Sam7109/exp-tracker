@@ -18,7 +18,8 @@ require("dotenv").config();
 const path = require("path");
 
 app.use('/webhooks',webhookroutes)
-app.use(express.json());
+app.use(express.json()); // Parse JSON bodies
+app.use(express.urlencoded({ extended: true })); 
 
 
 const cors = require("cors");
@@ -52,7 +53,7 @@ app.get('/payment-cancel', (req, res) => {
 signupModel.hasMany(Expense, { foreignKey: 'userId' });
 Expense.belongsTo(signupModel, { foreignKey: 'userId' });
 
-sequelize.sync() // force: true will drop existing tables //{ alter:true} will match with model definitions 
+sequelize.sync() // {alter:true} force: true will drop existing tables //{ alter:true} will match with model definitions 
   .then(() => {
     console.log('Database synchronized');
     // Start the server
