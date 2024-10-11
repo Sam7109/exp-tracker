@@ -1,10 +1,13 @@
 const express = require("express");
 const app = express();
+
 const Details = require('./model/signupinfo');
 const Expense = require('./model/expenses')
 
 const sequelize = require('./utils/sequelize')
 const signupModel = require('./model/signupinfo')
+const s3 = require('./AWS-Configs/aws'); // Import the S3 instance
+
 
 const signupRoutes = require('./routes/approutes')
 const expenseroutes = require('./routes/expenseroutes')

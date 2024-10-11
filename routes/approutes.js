@@ -14,4 +14,4 @@ router.post('/update-Password/:id', signupController.updatePassword);
 
 
 
-module.exports = router 
+module.exports = router  

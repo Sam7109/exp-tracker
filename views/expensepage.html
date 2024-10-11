@@ -451,41 +451,42 @@ window.addEventListener("click", function (event) {
 });
 
 //downloading CSV file 
-document.getElementById("downloadbtn").addEventListener('click',function(){
+document.getElementById("downloadbtn").addEventListener('click', function() {
   const token = localStorage.getItem("jwtToken");
+  const downloadButton = document.getElementById("downloadbtn");
 
-          axios
-            .get("/api/user-expenses?format=csv", {
-              headers: { Authorization: `Bearer ${token}` },
-              responseType: "blob",
-            })
-            .then((response) => {
-              // Create a new Blob object using the response data received from the server
-      const blob = new Blob([response.data], { type: "text/csv" });
+  if (!token) {
+    alert("You need to be logged in to download your expenses.");
+    return;
+  }
 
-// Create a link element to download the file
-const downloadUrl = window.URL.createObjectURL(blob);
-const link = document.createElement("a");
-link.href = downloadUrl;
+  // Disable the button to prevent multiple clicks while processing
+  downloadButton.disabled = true;
+  downloadButton.innerText = 'Generating CSV...';
 
-// Set the file name for the download
-link.setAttribute("download", `user_expenses.csv`);
-
-// Append the link to the body (required for Firefox)
-document.body.appendChild(link);
-
-// Programmatically click the link to trigger the download
-link.click();
-
-// Remove the link element from the DOM
-document.body.removeChild(link);
+  axios
+    .get("/api/user-expenses?format=csv", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((response) => {
+    if (response.data.fileUrl) {
+        // Directly open the pre-signed URL in a new tab to trigger the download
+        window.open(response.data.fileUrl, '_blank');
+    } else {
+        alert("No file URL returned.");
+    }
 })
-.catch((error) => {
-console.error("Error downloading the file:", error);
-alert("Failed to download the expenses CSV file. Please try again.");
+    .catch((error) => {
+      console.error("Error downloading the file:", error);
+      alert("Failed to download the expenses CSV file. Please try again.");
+    })
+    // .finally(() => {
+    //   // Re-enable the button and reset the text after completion
+    //   downloadButton.disabled = false;
+    //   downloadButton.innerText = 'Download Expenses';
+    // });
 });
-         
-            })
+
 
     </script>
   </body>

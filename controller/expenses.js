@@ -4,6 +4,9 @@ const signupModel = require("../model/signupinfo");
 const sequelize = require("../utils/sequelize");
 const { Parser } = require("json2csv");
 
+const AWS = require("aws-sdk");
+const s3 = require("../AWS-Configs/aws"); // Ensure you have the AWS SDK configured
+
 exports.submitExpense = async (req, res) => {
   try {
     const transaction = await sequelize.transaction();
@@ -106,12 +109,48 @@ exports.getAllexpenses = async (req, res) => {
       const json2csvParser = new Parser({ fields: csvFields });
       const csv = json2csvParser.parse(expenseData);
 
-      // Set headers to download the file as CSV
-      res.header("Content-Type", "text/csv");
-      res.attachment(`user_expenses_${userId}.csv`);
+      // Define S3 upload parameters
+      const params = {
+        Bucket: process.env.S3_BUCKET_NAME, // Your S3 bucket name
+        Key: `user_expenses_${userId}_${Date.now()}.csv`, // Unique file name
+        Body: csv, // The CSV data to upload
+        ContentType: "text/csv", // Set the content type 
+      };
+      console.log(params);
 
-      // Send the CSV content as a response
-      return res.send(csv);
+      // Upload the CSV to S3
+      s3.upload(params, (err, data) => {
+        if (err) {
+          console.error("Error uploading file to S3:", err);
+          return res
+            .status(500)
+            .json({ message: "Failed to upload file to S3" });
+        }
+        // Generate a pre-signed URL for the uploaded file
+        const presignedUrlParams = {
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: params.Key,
+          Expires: 60 * 5, // URL expiration time (5 minutes)
+        };
+
+        s3.getSignedUrl(
+          "getObject",
+          presignedUrlParams,
+          (urlErr, presignedUrl) => {
+            if (urlErr) {
+              console.error("Error generating pre-signed URL:", urlErr);
+              return res
+                .status(500)
+                .json({ message: "Failed to generate pre-signed URL" });
+            }
+
+            return res.status(200).json({
+              message: "File uploaded successfully",
+              fileUrl: presignedUrl, // Return the pre-signed URL
+            });
+          }
+        );
+      });
     } else {
       // Default JSON response
       return res
@@ -124,6 +163,7 @@ exports.getAllexpenses = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 exports.deleteExpense = async (req, res) => {
   const transaction = await sequelize.transaction(); // Start a new transaction
 
