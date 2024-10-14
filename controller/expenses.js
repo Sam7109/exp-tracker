@@ -73,11 +73,19 @@ exports.getAllexpenses = async (req, res) => {
   try {
     const userId = req.user.id; // Get the user's ID from the JWT token
 
-    // Fetch all expenses that belong to the authenticated user
-    const expenses = await Expense.findAll(
-      { where: { userId } },
-      { transaction }
-    );
+    // Extract pagination parameters from the request
+    const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+    const limit = parseInt(req.query.limit) || 10; // Default to limit 10 if not provided
+    const offset = (page - 1) * limit; // Calculate offset
+
+    // Fetch expenses that belong to the authenticated user with pagination
+    const expenses = await Expense.findAndCountAll({
+      where: { userId },
+      limit: limit,
+      offset: offset,
+      transaction,
+    });
+
     const paidUser = await signupModel.findOne(
       { where: { id: userId }, attributes: ["ispremium"] },
       { transaction }
@@ -86,18 +94,21 @@ exports.getAllexpenses = async (req, res) => {
     await transaction.commit();
 
     // Check if expenses are found
-    if (!expenses.length) {
+    if (!expenses.rows.length) {
       return res
         .status(404)
         .json({ message: "No expenses found for this user." });
     }
+
+    // Calculate total pages
+    const totalPages = Math.ceil(expenses.count / limit); // Calculate total pages
 
     // Check the requested format (e.g., json or csv)
     const format = req.query.format || "json"; // Default to 'json' if no format is specified
 
     if (format === "csv") {
       // Format expenses for CSV
-      const expenseData = expenses.map((expense) => ({
+      const expenseData = expenses.rows.map((expense) => ({
         Amount: expense.amount.toFixed(2),
         Description: expense.description,
         ExpenseType: expense.expensetype,
@@ -116,16 +127,14 @@ exports.getAllexpenses = async (req, res) => {
         Body: csv, // The CSV data to upload
         ContentType: "text/csv", // Set the content type 
       };
-      console.log(params);
 
       // Upload the CSV to S3
       s3.upload(params, (err, data) => {
         if (err) {
           console.error("Error uploading file to S3:", err);
-          return res
-            .status(500)
-            .json({ message: "Failed to upload file to S3" });
+          return res.status(500).json({ message: "Failed to upload file to S3" });
         }
+
         // Generate a pre-signed URL for the uploaded file
         const presignedUrlParams = {
           Bucket: process.env.S3_BUCKET_NAME,
@@ -133,29 +142,26 @@ exports.getAllexpenses = async (req, res) => {
           Expires: 60 * 5, // URL expiration time (5 minutes)
         };
 
-        s3.getSignedUrl(
-          "getObject",
-          presignedUrlParams,
-          (urlErr, presignedUrl) => {
-            if (urlErr) {
-              console.error("Error generating pre-signed URL:", urlErr);
-              return res
-                .status(500)
-                .json({ message: "Failed to generate pre-signed URL" });
-            }
-
-            return res.status(200).json({
-              message: "File uploaded successfully",
-              fileUrl: presignedUrl, // Return the pre-signed URL
-            });
+        s3.getSignedUrl("getObject", presignedUrlParams, (urlErr, presignedUrl) => {
+          if (urlErr) {
+            console.error("Error generating pre-signed URL:", urlErr);
+            return res.status(500).json({ message: "Failed to generate pre-signed URL" });
           }
-        );
+
+          return res.status(200).json({
+            message: "File uploaded successfully",
+            fileUrl: presignedUrl, // Return the pre-signed URL
+          });
+        });
       });
     } else {
-      // Default JSON response
-      return res
-        .status(200)
-        .json({ data: expenses, ispremium: paidUser.ispremium });
+      // Default JSON response with pagination information
+      return res.status(200).json({
+        data: expenses.rows, // The fetched expenses
+        ispremium: paidUser.ispremium,
+        currentPage: page, // Current page number
+        totalPages: totalPages, // Total number of pages
+      });
     }
   } catch (error) {
     await transaction.rollback();
@@ -163,6 +169,7 @@ exports.getAllexpenses = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 exports.deleteExpense = async (req, res) => {
   const transaction = await sequelize.transaction(); // Start a new transaction

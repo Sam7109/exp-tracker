@@ -31,16 +31,15 @@
         background-color: rgba(0, 0, 0, 0.4);
       }
       .modal-content {
-  background-color: #fefefe;
-  margin: 5% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 60%;
-  max-height: 80vh;
-  overflow-y: auto;
-  border-radius: 10px;
-}
-
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 60%;
+        max-height: 80vh;
+        overflow-y: auto;
+        border-radius: 10px;
+      }
       .close {
         color: #aaa;
         float: right;
@@ -72,26 +71,27 @@
         margin-bottom: 10px;
       }
       .expense-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  grid-gap: 15px;
-  margin-top: 10px;
-}
-.expense-field {
-  text-align: center;
-  border: 1px solid #ddd;
-  padding: 8px;
-  border-radius: 5px;
-  background-color: #fff;
-}
-.expense-year,
-.expense-month {
-  margin: 20px 0 10px;
-  font-weight: bold;
-  font-size: 20px;
-}
-
-      
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-gap: 15px;
+        margin-top: 10px;
+      }
+      .expense-field {
+        text-align: center;
+        border: 1px solid #ddd;
+        padding: 8px;
+        border-radius: 5px;
+        background-color: #fff;
+      }
+      .expense-year,
+      .expense-month {
+        margin: 20px 0 10px;
+        font-weight: bold;
+        font-size: 20px;
+      }
+      .pagination {
+        margin-top: 20px;
+      }
     </style>
   </head>
   <body>
@@ -145,35 +145,44 @@
         <button id="downloadbtn" class="btn btn-secondary ml-2 my-2" style="display: none;" >Download Expenses</button>
       </form>
       <h3 class="mt-5">Expenses List</h3>
+
+      <!-- Dropdown for items per page -->
+      <label for="itemsPerPage">Items per Page:</label>
+      <select id="itemsPerPage" class="form-control mb-3">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="40">40</option>
+      </select>
+
       <ul
         id="expenseList"
         class="list-group"
-        style="
-          max-height: 200px;
-          overflow-y: auto;
-          padding: 5px;
-          border: 1px solid #ccc;
-          border-radius: 5px;
-        "
+        style="max-height: 200px; overflow-y: auto; padding: 5px; border: 1px solid #ccc; border-radius: 5px;"
       ></ul>
+
+      <!-- Pagination controls -->
+      <div class="pagination">
+        <button id="prev-btn" class="btn btn-secondary" disabled>Previous</button>
+        <span id="page-info"></span>
+        <button id="next-btn" class="btn btn-secondary">Next</button>
+      </div>
+
       <h3 class="mt-5">Expense History</h3>
       <div id="expenseHistoryContainer" style="display: none;"></div>
     </div>
-    </div>
 
-        <!-- Expense History Modal -->
-        <div id="expenseHistoryModal" class="modal">
-          <div class="modal-content">
-            <span class="close" id="closeHistoryModal">&times;</span>
-            <h3>Expense History</h3>
-            <div id="expenseHistoryContent">
-              <!-- Table will be dynamically generated here -->
-            </div>
-          </div>
+    <!-- Expense History Modal -->
+    <div id="expenseHistoryModal" class="modal">
+      <div class="modal-content">
+        <span class="close" id="closeHistoryModal">&times;</span>
+        <h3>Expense History</h3>
+        <div id="expenseHistoryContent">
+          <!-- Table will be dynamically generated here -->
         </div>
-  
-    
-  
+      </div>
+    </div>
 
     <!-- Leaderboard Modal -->
     <div id="leaderboardModal" class="modal">
@@ -188,101 +197,92 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-      document
-        .getElementById("logoutButton")
-        .addEventListener("click", function () {
-          localStorage.removeItem("jwtToken");
-          window.location.href = "/home";
-        });
+      let currentPage = 1;
+      let totalPages = 0;
+      let limit = 10; // Default items per page
 
-      document
-        .getElementById("expenseForm")
-        .addEventListener("submit", function (e) {
-          e.preventDefault();
-          const amount = document.getElementById("amount").value;
-          const description = document.getElementById("description").value;
-          const expensetype = document.getElementById("expensetype").value;
-          const token = localStorage.getItem("jwtToken");
+      document.getElementById("logoutButton").addEventListener("click", function () {
+        localStorage.removeItem("jwtToken");
+        window.location.href = "/home";
+      });
 
-          axios
-            .post(
-              "/api/submitexpense",
-              { amount, description, expensetype },
-              { headers: { Authorization: `Bearer ${token}` } }
-            )
-            .then((response) => {
-              if (
-                response.data &&
-                response.data.message === "Expense added successfully"
-              ) {
-                addExpenseToList(response.data.data);
-                resetForm();
-              }
-            })
-            .catch((error) => console.error("Error creating expense:", error));
-        });
+      document.getElementById("expenseForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+        const amount = document.getElementById("amount").value;
+        const description = document.getElementById("description").value;
+        const expensetype = document.getElementById("expensetype").value;
+        const token = localStorage.getItem("jwtToken");
 
-      document
-        .getElementById("premiumButton")
-        .addEventListener("click", function () {
-          const token = localStorage.getItem("jwtToken");
+        axios
+          .post(
+            "/api/submitexpense",
+            { amount, description, expensetype },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          .then((response) => {
+            if (
+              response.data &&
+              response.data.message === "Expense added successfully"
+            ) {
+              addExpenseToList(response.data.data);
+              resetForm();
+              fetchExpenses(currentPage, limit); // Refresh the list
+            }
+          })
+          .catch((error) => console.error("Error creating expense:", error));
+      });
 
-          axios
-            .post(
-              "/stripe-payments/create-stripe-session",
-              {},
-              { headers: { Authorization: `Bearer ${token}` } }
-            )
-            .then(function (response) {
-              window.location.href = response.data.url;
-            })
-            .catch(function (error) {
-              console.error("Error creating checkout session:", error);
-              alert("Failed to initiate payment. Please try again.");
+      document.getElementById("premiumButton").addEventListener("click", function () {
+        const token = localStorage.getItem("jwtToken");
+
+        axios
+          .post(
+            "/stripe-payments/create-stripe-session",
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          .then(function (response) {
+            window.location.href = response.data.url;
+          })
+          .catch(function (error) {
+            console.error("Error creating checkout session:", error);
+            alert("Failed to initiate payment. Please try again.");
+          });
+      });
+
+      document.getElementById("leaderboardButton").addEventListener("click", function () {
+        const token = localStorage.getItem("jwtToken");
+
+        axios
+          .get("/api/leaderboard", {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((response) => {
+            console.log("Response Data:", response.data);
+            const leaderboardData = response.data.data;
+
+            const leaderboardList = document.getElementById("leaderboardList");
+            leaderboardList.innerHTML = "";
+
+            leaderboardData.forEach((user) => {
+              const listItem = document.createElement("li");
+              listItem.className = "list-group-item leaderboard-item";
+              listItem.innerHTML = `username: ${user.username} &nbsp;&nbsp; | &nbsp;&nbsp; total expense - ${user.totalExpense}`;
+
+              leaderboardList.appendChild(listItem);
             });
-        });
 
-      // Leaderboard button click event
-      document
-        .getElementById("leaderboardButton")
-        .addEventListener("click", function () {
-          const token = localStorage.getItem("jwtToken");
+            document.getElementById("leaderboardModal").style.display = "block";
+          })
+          .catch((error) => {
+            console.error("Error fetching leaderboard data:", error);
+            alert("Failed to fetch leaderboard data.");
+          });
+      });
 
-          axios
-            .get("/api/leaderboard", {
-              headers: { Authorization: `Bearer ${token}` },
-            })
-            .then((response) => {
-              console.log("Response Data:", response.data);
-              const leaderboardData = response.data.data;
-              console.log("Leaderboard Data:", response.data.data); // Log the "data" array
-
-              const leaderboardList =
-                document.getElementById("leaderboardList");
-              leaderboardList.innerHTML = "";
-
-              leaderboardData.forEach((user, index) => {
-                const listItem = document.createElement("li");
-                listItem.className = "list-group-item leaderboard-item";
-                listItem.innerHTML = `username: ${user.username} &nbsp;&nbsp; | &nbsp;&nbsp; total expense - ${user.totalExpense}`;
-
-                leaderboardList.appendChild(listItem);
-              });
-
-              document.getElementById("leaderboardModal").style.display =
-                "block";
-            })
-            .catch((error) => {
-              console.error("Error fetching leaderboard data:", error);
-              alert("Failed to fetch leaderboard data.");
-            });
-        });
-
-      document
-        .getElementById("closeModal")
-        .addEventListener("click", function () {
-          document.getElementById("leaderboardModal").style.display = "none";
-        });
+      document.getElementById("closeModal").addEventListener("click", function () {
+        document.getElementById("leaderboardModal").style.display = "none";
+      });
 
       window.addEventListener("click", function (event) {
         const modal = document.getElementById("leaderboardModal");
@@ -293,6 +293,8 @@
 
       document.addEventListener("DOMContentLoaded", function () {
         const token = localStorage.getItem("jwtToken");
+        fetchExpenses(currentPage, limit); // Initial fetch of expenses
+
         axios
           .get("/api/user-expenses", {
             headers: { Authorization: `Bearer ${token}` },
@@ -303,10 +305,9 @@
 
             if (isPremium) {
               document.getElementById("premiumButton").style.display = "none";
-              document.getElementById("leaderboardButton").style.display =
-                "block";
-                document.getElementById("expenseHistoryButton").style.display = "block"
-                document.getElementById("downloadbtn").style.display = "block"
+              document.getElementById("leaderboardButton").style.display = "block";
+              document.getElementById("expenseHistoryButton").style.display = "block";
+              document.getElementById("downloadbtn").style.display = "block";
             }
 
             expenses.forEach((expense) => addExpenseToList(expense));
@@ -319,7 +320,11 @@
       function addExpenseToList(expense) {
         const listItem = document.createElement("li");
         listItem.className = "list-group-item expense-item";
-        listItem.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center;"><div><strong>${expense.description}</strong><br><small class="text-muted">${expense.expensetype}</small></div><span class="badge badge-primary badge-pill">$${expense.amount}</span><button class="btn btn-danger btn-sm ml-2 delete-btn" data-id="${expense.id}">Delete</button></div>`;
+        listItem.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center;">
+            <div><strong>${expense.description}</strong><br><small class="text-muted">${expense.expensetype}</small></div>
+            <span class="badge badge-primary badge-pill">$${expense.amount}</span>
+            <button class="btn btn-danger btn-sm ml-2 delete-btn" data-id="${expense.id}">Delete</button>
+        </div>`;
         document.getElementById("expenseList").appendChild(listItem);
         listItem
           .querySelector(".delete-btn")
@@ -347,8 +352,123 @@
       function resetForm() {
         document.getElementById("expenseForm").reset();
       }
-      // logic for displaying the expenses on Monthly and yearly basis 
-      document.getElementById("expenseHistoryButton").addEventListener("click", fetchAndDisplayExpenseHistory);
+
+      // Pagination Logic
+      async function fetchExpenses(page, limit) {
+        const token = localStorage.getItem("jwtToken");
+        const response = await axios.get(`/api/user-expenses?page=${page}&limit=${limit}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.data && response.data.data) {
+          const expenses = response.data.data;
+          totalPages = response.data.totalPages;
+
+          // Display expenses
+          displayExpenses(expenses);
+          updatePaginationInfo();
+        } else {
+          console.error('Failed to fetch expenses');
+        }
+      }
+
+      function displayExpenses(expenses) {
+        const expenseList = document.getElementById("expenseList");
+        expenseList.innerHTML = ""; // Clear previous list
+
+        expenses.forEach(expense => {
+          const listItem = document.createElement("li");
+          listItem.className = "list-group-item expense-item";
+          listItem.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center;">
+              <div><strong>${expense.description}</strong><br><small class="text-muted">${expense.expensetype}</small></div>
+              <span class="badge badge-primary badge-pill">$${expense.amount}</span>
+          </div>`;
+          expenseList.appendChild(listItem);
+        });
+      }
+
+      function updatePaginationInfo() {
+        const pageInfo = document.getElementById("page-info");
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        document.getElementById("prev-btn").disabled = currentPage === 1;
+        document.getElementById("next-btn").disabled = currentPage === totalPages;
+      }
+
+      // Event listeners for pagination buttons
+      document.getElementById("prev-btn").addEventListener("click", function () {
+        if (currentPage > 1) {
+          currentPage--;
+          fetchExpenses(currentPage, limit);
+        }
+      });
+
+      document.getElementById("next-btn").addEventListener("click", function () {
+        if (currentPage < totalPages) {
+          currentPage++;
+          fetchExpenses(currentPage, limit);
+        }
+      });
+
+      // Event listener for items per page selection
+      document.getElementById("itemsPerPage").addEventListener("change", function(event) {
+        limit = Number(event.target.value); // Update limit based on user selection
+        currentPage = 1; // Reset to the first page
+        fetchExpenses(currentPage, limit); // Fetch expenses for the new limit
+      });
+
+      // Close Expense History Modal
+      document.getElementById("closeHistoryModal").addEventListener("click", function () {
+        document.getElementById("expenseHistoryModal").style.display = "none";
+      });
+
+      // Close modal when clicking outside of the modal content
+      window.addEventListener("click", function (event) {
+        const modal = document.getElementById("expenseHistoryModal");
+        if (event.target === modal) {
+          modal.style.display = "none";
+        }
+      });
+
+      // Downloading CSV file
+      document.getElementById("downloadbtn").addEventListener('click', function() {
+        const token = localStorage.getItem("jwtToken");
+        const downloadButton = document.getElementById("downloadbtn");
+
+        if (!token) {
+          alert("You need to be logged in to download your expenses.");
+          return;
+        }
+
+        // Disable the button to prevent multiple clicks while processing
+        downloadButton.disabled = true;
+        downloadButton.innerText = 'Generating CSV...';
+
+        axios
+          .get("/api/user-expenses?format=csv", {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((response) => {
+            if (response.data.fileUrl) {
+              // Directly open the pre-signed URL in a new tab to trigger the download
+              window.open(response.data.fileUrl, '_blank');
+            } else {
+              alert("No file URL returned.");
+            }
+          })
+          .catch((error) => {
+            console.error("Error downloading the file:", error);
+            alert("Failed to download the expenses CSV file. Please try again.");
+          })
+          .finally(() => {
+      // Re-enable the button and reset the text after completion
+      downloadButton.disabled = false;
+      downloadButton.innerText = 'Download Expenses';
+    });
+      });
+
+      // expense history 
+      // Logic for displaying the expenses on Monthly and Yearly basis
+document.getElementById("expenseHistoryButton").addEventListener("click", fetchAndDisplayExpenseHistory);
 
 async function fetchAndDisplayExpenseHistory() {
   const modal = document.getElementById("expenseHistoryModal");
@@ -449,44 +569,6 @@ window.addEventListener("click", function (event) {
     modal.style.display = "none";
   }
 });
-
-//downloading CSV file 
-document.getElementById("downloadbtn").addEventListener('click', function() {
-  const token = localStorage.getItem("jwtToken");
-  const downloadButton = document.getElementById("downloadbtn");
-
-  if (!token) {
-    alert("You need to be logged in to download your expenses.");
-    return;
-  }
-
-  // Disable the button to prevent multiple clicks while processing
-  downloadButton.disabled = true;
-  downloadButton.innerText = 'Generating CSV...';
-
-  axios
-    .get("/api/user-expenses?format=csv", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then((response) => {
-    if (response.data.fileUrl) {
-        // Directly open the pre-signed URL in a new tab to trigger the download
-        window.open(response.data.fileUrl, '_blank');
-    } else {
-        alert("No file URL returned.");
-    }
-})
-    .catch((error) => {
-      console.error("Error downloading the file:", error);
-      alert("Failed to download the expenses CSV file. Please try again.");
-    })
-    // .finally(() => {
-    //   // Re-enable the button and reset the text after completion
-    //   downloadButton.disabled = false;
-    //   downloadButton.innerText = 'Download Expenses';
-    // });
-});
-
 
     </script>
   </body>

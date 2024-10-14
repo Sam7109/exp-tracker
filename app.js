@@ -6,13 +6,16 @@ const Expense = require('./model/expenses')
 
 const sequelize = require('./utils/sequelize')
 const signupModel = require('./model/signupinfo')
+
 const s3 = require('./AWS-Configs/aws'); // Import the S3 instance
+const https = require('https')
 
 
 const signupRoutes = require('./routes/approutes')
 const expenseroutes = require('./routes/expenseroutes')
-const port = process.env.port;
 
+const port = process.env.port;
+const fs = require('fs');
 
 const stripepayments = require('./routes/striperoutes')
 const webhookroutes = require('./routes/webhooksroute')
@@ -24,7 +27,6 @@ app.use('/webhooks',webhookroutes)
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); 
 
-
 const cors = require("cors");
 app.use(cors());
 
@@ -34,8 +36,6 @@ app.use(express.static(path.join(__dirname, "views", "loginsignup.html")));
 app.use('/home',signupRoutes)
 app.use('/api', expenseroutes); // Make sure you're using a base route like '/api'
 app.use('/stripe-payments',stripepayments)
-
-
 
 app.get("/home", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "loginsignup.html"));
@@ -60,8 +60,9 @@ sequelize.sync() // {alter:true} force: true will drop existing tables //{ alter
   .then(() => {
     console.log('Database synchronized');
     // Start the server
+   
     app.listen(port, () => {
-      console.log(`Running on port ${port}`);
+      console.log(`Server running on port ${port}`);
     });
   })
   .catch(err => {
