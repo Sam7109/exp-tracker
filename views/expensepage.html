@@ -224,7 +224,6 @@
               response.data &&
               response.data.message === "Expense added successfully"
             ) {
-              addExpenseToList(response.data.data);
               resetForm();
               fetchExpenses(currentPage, limit); // Refresh the list
             }
@@ -258,7 +257,6 @@
             headers: { Authorization: `Bearer ${token}` },
           })
           .then((response) => {
-            console.log("Response Data:", response.data);
             const leaderboardData = response.data.data;
 
             const leaderboardList = document.getElementById("leaderboardList");
@@ -310,27 +308,31 @@
               document.getElementById("downloadbtn").style.display = "block";
             }
 
-            expenses.forEach((expense) => addExpenseToList(expense));
+            displayExpenses(expenses);
           })
           .catch((error) => {
             console.error("Error fetching user expenses:", error);
           });
       });
 
-      function addExpenseToList(expense) {
-        const listItem = document.createElement("li");
-        listItem.className = "list-group-item expense-item";
-        listItem.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center;">
+      function displayExpenses(expenses) {
+        const expenseList = document.getElementById("expenseList");
+        expenseList.innerHTML = ""; // Clear previous list
+
+        expenses.forEach((expense) => {
+          const listItem = document.createElement("li");
+          listItem.className = "list-group-item expense-item";
+          listItem.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center;">
             <div><strong>${expense.description}</strong><br><small class="text-muted">${expense.expensetype}</small></div>
             <span class="badge badge-primary badge-pill">$${expense.amount}</span>
             <button class="btn btn-danger btn-sm ml-2 delete-btn" data-id="${expense.id}">Delete</button>
-        </div>`;
-        document.getElementById("expenseList").appendChild(listItem);
-        listItem
-          .querySelector(".delete-btn")
-          .addEventListener("click", function () {
+          </div>`;
+          expenseList.appendChild(listItem);
+
+          listItem.querySelector(".delete-btn").addEventListener("click", function () {
             deleteExpense(expense.id, listItem);
           });
+        });
       }
 
       function deleteExpense(id, listItem) {
@@ -370,21 +372,6 @@
         } else {
           console.error('Failed to fetch expenses');
         }
-      }
-
-      function displayExpenses(expenses) {
-        const expenseList = document.getElementById("expenseList");
-        expenseList.innerHTML = ""; // Clear previous list
-
-        expenses.forEach(expense => {
-          const listItem = document.createElement("li");
-          listItem.className = "list-group-item expense-item";
-          listItem.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center;">
-              <div><strong>${expense.description}</strong><br><small class="text-muted">${expense.expensetype}</small></div>
-              <span class="badge badge-primary badge-pill">$${expense.amount}</span>
-          </div>`;
-          expenseList.appendChild(listItem);
-        });
       }
 
       function updatePaginationInfo() {
